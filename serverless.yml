@@ -1,0 +1,52 @@
+type: rest-api-app
+components:
+  fruitsDb:
+    type: aws-dynamodb
+    inputs:
+      region: us-east-1
+      tables:
+        - name: fruits
+          hashKey: id
+          indexes:
+            - name: FruitIdIndex
+              type: global
+              hashKey: id
+          schema:
+            id: number
+            name: string
+            description: string
+            price: number
+          options:
+            timestamps: true
+  createFruit:
+    type: aws-lambda
+    inputs:
+      memory: 512
+      timeout: 10
+      handler: createFruit.handler
+      name: createFruit
+      root: ./src
+      env:
+        fruitTableName: fruits
+  listFruits:
+    type: aws-lambda
+    inputs:
+      memory: 512
+      timeout: 10
+      handler: listFruits.handler
+      name: listFruits
+      root: ./src
+      env:
+        fruitTableName: fruits
+  fruitsApi:
+    type: rest-api
+    inputs:
+      gateway: aws-apigateway
+      routes:
+        /fruits:
+          post:
+            function: ${createFruit}
+            cors: true
+          get:
+            function: ${listFruits}
+            cors: true
